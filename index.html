@@ -2,116 +2,130 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nawab ZADA - Drift & Chat Hub</title>
+    <title>Nawab ZADA - Pro Drift & Smart Chat</title>
     <style>
-        body { margin: 0; background: #111; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* Brand Header */
-        .brand-header { background: #D4AF37; color: #000; padding: 5px; text-align: center; font-weight: bold; font-size: 0.9em; letter-spacing: 1px; }
-
-        /* Game Area */
-        #game-container { flex: 1; position: relative; background: #222; border-bottom: 3px solid #D4AF37; }
+        body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        .brand { background: #D4AF37; color: #000; text-align: center; font-weight: bold; padding: 5px; font-size: 0.8em; }
+        #game-area { flex: 1; position: relative; background: #222; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; }
+        .stats { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; color: #D4AF37; font-weight: bold; z-index: 10; font-size: 1.2em; text-shadow: 2px 2px #000; }
         
-        .stats { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; color: #D4AF37; font-weight: bold; z-index: 10; text-shadow: 2px 2px #000; }
-
-        /* Chat Area */
-        #chat-container { height: 220px; background: #000; display: flex; flex-direction: column; }
-        #chat-messages { flex: 1; overflow-y: auto; padding: 10px; color: #0f0; font-family: 'Courier New', monospace; font-size: 0.8em; border-top: 1px solid #333; }
-        .input-area { display: flex; padding: 8px; background: #1a1a1a; }
-        input { flex: 1; background: #000; border: 1px solid #D4AF37; color: white; padding: 12px; border-radius: 5px; outline: none; }
-        button { background: #D4AF37; color: black; border: none; padding: 0 20px; margin-left: 5px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        /* Smart Chat System */
+        #chat-area { height: 250px; background: #050505; border-top: 2px solid #D4AF37; display: flex; flex-direction: column; }
+        #messages { flex: 1; overflow-y: auto; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        .input-box { display: flex; padding: 10px; background: #111; }
+        input { flex: 1; background: #000; border: 1px solid #D4AF37; color: #0f0; padding: 12px; border-radius: 5px; outline: none; }
+        button { background: #D4AF37; border: none; padding: 0 20px; margin-left: 5px; font-weight: bold; border-radius: 5px; cursor: pointer; }
         
-        .bot-msg { color: #D4AF37; font-weight: bold; }
-        .user-msg { color: #fff; opacity: 0.8; }
-        .dev-footer { font-size: 0.7em; color: #555; text-align: center; padding: 2px; background: #000; }
+        .bot { color: #D4AF37; }
+        .user { color: #fff; }
     </style>
 </head>
 <body>
 
-    <div class="brand-header">ORIGINAL PROJECT BY: NAWAB ZADA</div>
+<div class="brand">PRO VERSION BY: NAWAB ZADA</div>
 
-    <div id="game-container">
-        <div class="stats">
-            <div>SCORE: <span id="score">0</span></div>
-            <div>FUEL: <span id="fuel">100</span>%</div>
-        </div>
-        <canvas id="gameCanvas"></canvas>
+<div id="game-area">
+    <div class="stats">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>FUEL: <span id="fuel">100</span>%</div>
     </div>
+    <canvas id="gameCanvas"></canvas>
+</div>
 
-    <div id="chat-container">
-        <div id="chat-messages">
-            <div><span class="bot-msg">[NAWAB-AI]:</span> Welcome Jani! Main Nawab ZADA ka AI assistant hoon. Game khelo ya gup shup lagao! 🔥</div>
-        </div>
-        <div class="input-area">
-            <input type="text" id="userMsg" placeholder="Type message to AI...">
-            <button onclick="sendMsg()">SEND</button>
-        </div>
-        <div class="dev-footer">© 2026 NAWAB ZADA | All Rights Reserved</div>
+<div id="chat-area">
+    <div id="messages">
+        <div><span class="bot">[NAWAB-AI]:</span> Jani, car sambhal ke chalana! Kuch poochna hai toh type karo. 🔥</div>
     </div>
+    <div class="input-box">
+        <input type="text" id="userInp" placeholder="Ask AI Nawab Anything...">
+        <button onclick="talk()">SEND</button>
+    </div>
+</div>
 
-    <script>
-        // --- GAME LOGIC ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 250; 
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 250;
 
-        let carX = canvas.width / 2 - 25;
-        let score = 0, fuel = 100, gameActive = true, frame = 0;
+    let carX = canvas.width / 2 - 25;
+    let score = 0, fuel = 100, frame = 0, gameActive = true;
+    let obstacles = [];
 
-        // Mobile Touch
-        canvas.addEventListener('touchmove', (e) => {
-            if(e.touches[0].clientX) carX = e.touches[0].clientX - 25;
+    // Movement
+    canvas.addEventListener('touchmove', (e) => { carX = e.touches[0].clientX - 25; });
+
+    function drawCar(x, y, color, isPlayer) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, 40, 70); // Car Body
+        ctx.fillStyle = "black";
+        ctx.fillRect(x+5, y+5, 30, 15); // Windshield
+        if(isPlayer) {
+            ctx.fillStyle = "gold"; // Spoiler for Nawab
+            ctx.fillRect(x, y+65, 40, 5);
+        }
+    }
+
+    function gameUpdate() {
+        if (!gameActive) return;
+        ctx.fillStyle = "#333";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Moving Road Lines
+        ctx.fillStyle = "white";
+        for(let i=0; i<10; i++) ctx.fillRect(canvas.width/2-2, (i*80 + frame*5)%canvas.height, 4, 40);
+
+        // Player
+        drawCar(carX, canvas.height - 100, "#D4AF37", true);
+
+        // Obstacles (Traffic)
+        if (frame % 60 === 0) obstacles.push({x: Math.random()*(canvas.width-40), y: -100});
+        obstacles.forEach((ob, i) => {
+            ob.y += 5 + (score/10);
+            drawCar(ob.x, ob.y, "red", false);
+            
+            // Collision Detection
+            if (carX < ob.x + 40 && carX + 40 > ob.x && canvas.height-100 < ob.y + 70 && canvas.height-30 > ob.y) {
+                gameActive = false;
+                alert("CRASHED! Score: " + score);
+                location.reload();
+            }
         });
 
-        function gameLoop() {
-            if (!gameActive) return;
-            ctx.fillStyle = "#222";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Road Lines
-            ctx.fillStyle = "white";
-            for(let i=0; i<10; i++) ctx.fillRect(canvas.width/2-2, (i*60 + frame*5)%canvas.height, 4, 30);
-
-            // Car
-            ctx.fillStyle = "#D4AF37"; // Gold Car
-            ctx.fillRect(carX, canvas.height - 100, 50, 80);
-            
-            frame++;
-            requestAnimationFrame(gameLoop);
+        if(frame % 100 === 0 && fuel > 0) { 
+            fuel--; 
+            document.getElementById('fuel').innerText = fuel; 
         }
-        gameLoop();
 
-        // --- AI CHAT LOGIC ---
-        const msgBox = document.getElementById('chat-messages');
-        const aiReplies = [
-            "Kya baat hai Jani! Nawab ZADA style drift! 🏎️",
-            "Fikar na kar, main hoon na! 😎",
-            "Maza aa raha hai? Ye sab Nawab ZADA ki coding ka kamaal hai.",
-            "Jani, fuel check karo, kahin raste mein na phans jao!",
-            "Score toh dekho! Nawab ZADA pro player lagte ho.",
-            "Chat boring ho rahi hai? Koi joke sunao!"
-        ];
+        frame++;
+        requestAnimationFrame(gameUpdate);
+    }
+    gameUpdate();
 
-        function sendMsg() {
-            const input = document.getElementById('userMsg');
-            if (input.value.trim() === "") return;
+    // --- SMART AI BOT ---
+    function talk() {
+        const inp = document.getElementById('userInp');
+        const box = document.getElementById('messages');
+        if(!inp.value) return;
 
-            msgBox.innerHTML += `<div><span class="user-msg">You:</span> ${input.value}</div>`;
-            const userTxt = input.value.toLowerCase();
-            input.value = "";
-            msgBox.scrollTop = msgBox.scrollHeight;
+        box.innerHTML += `<div><span class="user">You:</span> ${inp.value}</div>`;
+        let txt = inp.value.toLowerCase();
+        inp.value = "";
 
-            setTimeout(() => {
-                let reply = aiReplies[Math.floor(Math.random() * aiReplies.length)];
-                if(userTxt.includes("nawab")) reply = "Nawab ZADA hamara dost hai aur behtareen developer hai! 🦾";
-                if(userTxt.includes("hello") || userTxt.includes("hi")) reply = "Walaikum Assalam Jani! Kaisay ho?";
-                
-                msgBox.innerHTML += `<div><span class="bot-msg">[NAWAB-AI]:</span> ${reply}</div>`;
-                msgBox.scrollTop = msgBox.scrollHeight;
-            }, 800);
-        }
-    </script>
+        let reply = "Jani, main seekh raha hoon abhi, thora asaan poocho!";
+        
+        if(txt.includes("loyal")) reply = "Nawab ZADA se zyada loyal banda poore Pakistan mein nahi milega! 💯";
+        else if(txt.includes("hacker")) reply = "Hacker toh nahi, lekin Nawab ZADA coding ka shehenshah zaroor hai! 👑";
+        else if(txt.includes("paisa")) reply = "Dollar aayenge Jani, bas traffic barhao website par! 💵";
+        else if(txt.includes("kaise ho")) reply = "Main fit hoon Jani, tum batao game kaisi lag rahi hai?";
+        else if(txt.includes("bye")) reply = "Allah Hafiz! Nawab ZADA ka naam yaad rakhna.";
+
+        setTimeout(() => {
+            box.innerHTML += `<div><span class="bot">[NAWAB-AI]:</span> ${reply}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }, 500);
+    }
+</script>
 </body>
 </html>
